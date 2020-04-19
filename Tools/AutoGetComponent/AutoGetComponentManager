@@ -1,0 +1,40 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using UnityEngine;
+
+public class AutoGetComponentManager : MonoBehaviour
+{
+    private void Awake()
+    {
+        var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+        IEnumerable<MonoBehaviour> monoBehaviours = Resources.FindObjectsOfTypeAll<MonoBehaviour>().Where(mb => mb.gameObject.scene == activeScene);
+        foreach(MonoBehaviour mono in monoBehaviours)
+        {
+            AutoWire(mono);
+        }
+    }
+
+    public static void AutoWire(MonoBehaviour mono)
+    {
+
+        //var attributes = (AutoGetComponent[])mono.GetType().GetCustomAttributes(typeof(AutoGetComponent), false);
+
+        var propreties=mono.GetType().GetFields().Where(prop => prop.IsDefined(typeof(AutoGetComponent), false));
+
+        foreach (var field in propreties)
+        {
+            foreach (AutoGetComponent autofind in field.GetCustomAttributes(typeof(AutoGetComponent), true))
+            {
+                var currentReferenceValue = field.GetValue(mono);
+
+                Component component = mono.GetComponent(field.FieldType);
+                field.SetValue(mono, component);
+
+            }
+        }
+
+    }
+}
